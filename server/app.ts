@@ -6,9 +6,10 @@ import { join as pathJoin } from 'path';
 import { connectToMongo } from './mongo';
 import setRoutes from './routes';
 
+const feDir = 'public/browser';
 const app = express();
 app.set('port', (process.env.PORT || 3000));
-app.use('/', express.static(pathJoin(__dirname, '../public')));
+app.use('/', express.static(pathJoin(__dirname, `../${feDir}`)));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 if (process.env.NODE_ENV !== 'test') {
@@ -21,7 +22,7 @@ const main = async (): Promise<void> => {
   try {
     await connectToMongo();
     app.get('/*', (req, res) => {
-      res.sendFile(pathJoin(__dirname, '../public/index.html'));
+      res.sendFile(pathJoin(__dirname, `../${feDir}/index.html`));
     });
     app.listen(app.get('port'), () => console.log(`Angular Full Stack listening on port ${app.get('port')}`));
   } catch (err) {
