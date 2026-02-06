@@ -1,38 +1,37 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 
-import { ToastComponent } from '../shared/toast/toast.component';
+import { ToastService } from '../shared/toast/toast.service';
 import { AuthService } from '../services/auth.service';
+import { UserService } from '../services/user.service';
+import { User } from '../shared/models/user.model';
 import { LoginComponent } from './login.component';
 
-class AuthServiceMock { }
-class RouterMock { }
+class AuthServiceMock {
+  currentUser = signal<User>(new User());
+  loggedIn = signal<boolean>(true);
+}
 
 describe('Component: Login', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let compiled: HTMLElement;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [ FormsModule, ReactiveFormsModule ],
-      declarations: [ LoginComponent ],
+  beforeEach(async() => {
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent, FormsModule, ReactiveFormsModule],
       providers: [
-        UntypedFormBuilder, ToastComponent,
-        { provide: Router, useClass: RouterMock },
-        { provide: AuthService, useClass: AuthServiceMock }
+        UntypedFormBuilder,
+        ToastService,
+        UserService,
+        { provide: AuthService, useClass: AuthServiceMock },
       ],
-      schemas: [NO_ERRORS_SCHEMA]
-    })
-      .compileComponents();
-  }));
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    await fixture.whenStable();
     compiled = fixture.nativeElement as HTMLElement;
   });
 

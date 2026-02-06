@@ -1,14 +1,15 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-
-import { ToastComponent } from '../shared/toast/toast.component';
-import { AuthService } from '../services/auth.service';
-import { UserService } from '../services/user.service';
-import { AdminComponent } from './admin.component';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Observable } from 'rxjs';
 
+import { AuthService } from '../services/auth.service';
+import { UserService } from '../services/user.service';
+import { ToastService } from '../shared/toast/toast.service';
+import { User } from '../shared/models/user.model';
+import { AdminComponent } from './admin.component';
+
 class AuthServiceMock {
-  currentUser = { _id: '1', username: 'test1@example.com', role: 'admin' };
+  currentUser = signal<User>({ _id: '1', username: 'test1@example.com', role: 'admin' });
 }
 
 class UserServiceMock {
@@ -26,23 +27,19 @@ describe('Component: Admin', () => {
   let fixture: ComponentFixture<AdminComponent>;
   let compiled: HTMLElement;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ AdminComponent ],
+  beforeEach(async() => {
+    await TestBed.configureTestingModule({
+      imports: [AdminComponent],
       providers: [
-        ToastComponent,
+        ToastService,
         { provide: AuthService, useClass: AuthServiceMock },
         { provide: UserService, useClass: UserServiceMock },
       ],
-      schemas: [NO_ERRORS_SCHEMA]
-    })
-      .compileComponents();
-  }));
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(AdminComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    await fixture.whenStable();
     compiled = fixture.nativeElement as HTMLElement;
   });
 
@@ -56,7 +53,7 @@ describe('Component: Admin', () => {
   });
 
   it('should display the text for no users', () => {
-    component.users = [];
+    component.users.set([]);
     fixture.detectChanges();
     const header = compiled.querySelector('h4');
     expect(header?.textContent).toContain('Registered users (0)');

@@ -6,9 +6,8 @@ import { AuthService } from './auth.service';
 export class AuthGuardAdmin  {
   auth = inject(AuthService);
 
-
   canActivate(): boolean {
-    return this.auth.isAdmin;
+    return this.auth.isAdmin();
   }
 
 }

@@ -3,8 +3,10 @@
   "compilerOptions": {
     "outDir": "../dist/server",
     "baseUrl": "",
-    "moduleResolution": "node",
-    "module": "commonjs",
+    "module": "nodenext",
     "types": ["node", "jest"],
-  }
+    "noPropertyAccessFromIndexSignature": false,
+    "noImplicitOverride": false
+  },
+  "include": ["**/*.ts"]
 }

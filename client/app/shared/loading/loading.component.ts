@@ -1,10 +1,12 @@
-import { Component, Input } from '@angular/core';
+import { Component, input, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-loading',
+  imports: [CommonModule],
   templateUrl: './loading.component.html',
-  standalone: false
 })
 export class LoadingComponent {
-  @Input() condition = false;
+  condition = input<boolean>(false);
+  displayedCondition = computed(() => this.condition());
 }

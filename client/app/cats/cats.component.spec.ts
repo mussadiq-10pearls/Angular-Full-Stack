@@ -1,12 +1,11 @@
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { waitForAsync, TestBed, ComponentFixture } from '@angular/core/testing';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { FormsModule, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
-
-import { ToastComponent } from '../shared/toast/toast.component';
-import { CatService } from '../services/cat.service';
-import { CatsComponent } from './cats.component';
 import { of, Observable } from 'rxjs';
+
+import { CatService } from '../services/cat.service';
+import { ToastService } from '../shared/toast/toast.service';
+import { CatsComponent } from './cats.component';
 
 class CatServiceMock {
   mockCats = [
@@ -23,23 +22,19 @@ describe('Component: Cats', () => {
   let fixture: ComponentFixture<CatsComponent>;
   let compiled: HTMLElement;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [ RouterTestingModule, FormsModule, ReactiveFormsModule ],
-      declarations: [ CatsComponent ],
+  beforeEach(async() => {
+    await TestBed.configureTestingModule({
+      imports: [CatsComponent, RouterTestingModule, FormsModule, ReactiveFormsModule],
       providers: [
-        ToastComponent, UntypedFormBuilder,
+        ToastService,
+        UntypedFormBuilder,
         { provide: CatService, useClass: CatServiceMock }
       ],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA]
-    })
-      .compileComponents();
-  }));
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(CatsComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    await fixture.whenStable();
     compiled = fixture.nativeElement as HTMLElement;
   });
 
@@ -53,7 +48,7 @@ describe('Component: Cats', () => {
   });
 
   it('should display the text for no cats', () => {
-    component.cats = [];
+    component.cats.set([]);
     fixture.detectChanges();
     const header = compiled.querySelector('.card-header');
     expect(header?.textContent).toContain('Current cats (0)');
@@ -81,9 +76,8 @@ describe('Component: Cats', () => {
   });
 
   it('should display the edit form', async () => {
-    component.isEditing = true;
-    component.cat = { name: 'Cat 1', age: 1, weight: 2 };
-    fixture.detectChanges();
+    component.isEditing.set(true);
+    component.cat.set({ name: 'Cat 1', age: 1, weight: 2 });
     await fixture.whenStable();
     const tds = compiled.querySelectorAll('td');
     expect(tds.length).toBe(1);

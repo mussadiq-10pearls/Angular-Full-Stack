@@ -1,25 +1,25 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ToastComponent } from './toast.component';
+import { ToastService } from './toast.service';
 
 describe('Component: Toast', () => {
   let component: ToastComponent;
   let fixture: ComponentFixture<ToastComponent>;
   let compiled: HTMLElement;
+  let toastService: ToastService;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ ToastComponent ],
-      schemas: [NO_ERRORS_SCHEMA]
-    })
-      .compileComponents();
-  }));
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [ToastComponent],
+      providers: [ToastService]
+    }).compileComponents();
 
-  beforeEach(() => {
     fixture = TestBed.createComponent(ToastComponent);
     component = fixture.componentInstance;
+    toastService = TestBed.inject(ToastService);
     fixture.detectChanges();
+    await fixture.whenStable();
     compiled = fixture.nativeElement as HTMLElement;
   });
 
@@ -28,8 +28,7 @@ describe('Component: Toast', () => {
   });
 
   it('should not have message set nor DOM element', () => {
-    expect(component.message.body).toBeFalsy();
-    expect(component.message.type).toBeFalsy();
+    expect(toastService.message()).toBeNull();
     const div = compiled.querySelector('div');
     expect(div).toBeNull();
   });
@@ -39,10 +38,10 @@ describe('Component: Toast', () => {
       body: 'test message',
       type: 'warning'
     };
-    component.setMessage(mockMessage.body, mockMessage.type);
-    expect(component.message.body).toBe(mockMessage.body);
-    expect(component.message.type).toBe(mockMessage.type);
+    toastService.setMessage(mockMessage.body, mockMessage.type);
     fixture.detectChanges();
+    expect(toastService.message()?.body).toBe(mockMessage.body);
+    expect(toastService.message()?.type).toBe(mockMessage.type);
     const div = compiled.querySelector('div');
     expect(div).toBeDefined();
     expect(div?.textContent).toContain(mockMessage.body);

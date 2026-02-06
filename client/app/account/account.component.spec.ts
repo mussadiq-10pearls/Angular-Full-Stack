@@ -1,16 +1,16 @@
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { waitForAsync, ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
+import { signal } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Observable, of } from 'rxjs';
 
-import { ToastComponent } from '../shared/toast/toast.component';
-import { User } from '../shared/models/user.model';
+import { AccountComponent } from './account.component';
 import { AuthService } from '../services/auth.service';
 import { UserService } from '../services/user.service';
-import { AccountComponent } from './account.component';
-import { of, Observable } from 'rxjs';
+import { ToastService } from '../shared/toast/toast.service';
+import { User } from '../shared/models/user.model';
 
-class AuthServiceMock { }
-
+class AuthServiceMock {
+  currentUser = signal<User>(new User());
+}
 class UserServiceMock {
   mockUser = {
     username: 'Test user',
@@ -23,47 +23,34 @@ class UserServiceMock {
 }
 
 describe('Component: Account', () => {
-  let component: AccountComponent;
   let fixture: ComponentFixture<AccountComponent>;
   let compiled: HTMLElement;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [ FormsModule ],
-      declarations: [ AccountComponent ],
+  beforeEach(async() => {
+    await TestBed.configureTestingModule({
+      imports: [AccountComponent],
       providers: [
-        ToastComponent,
+        ToastService,
         { provide: AuthService, useClass: AuthServiceMock },
         { provide: UserService, useClass: UserServiceMock },
-      ],
-      schemas: [NO_ERRORS_SCHEMA]
-    })
-      .compileComponents();
-  }));
-
-  beforeEach(() => {
+      ]
+    }).compileComponents();
+    
     fixture = TestBed.createComponent(AccountComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-    component.user = {
-      username: 'Test user',
-      email: 'test@example.com'
-    };
-    fixture.detectChanges();
     compiled = fixture.nativeElement as HTMLElement;
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('should create the account component', () => {
+    const component = fixture.componentInstance;
     expect(component).toBeTruthy();
   });
 
-  it('should display the page header text', () => {
-    const header = compiled.querySelector('.card-header');
-    expect(header?.textContent).toContain('Account settings');
+  it('should render the header', () => {
+    expect(compiled.querySelector('.card-header')?.textContent).toContain('Account settings');
   });
 
-  it('should display the username and email inputs filled', async () => {
-    await fixture.whenStable();
+  it('should display the username and email inputs filled', () => {
     const inputs = compiled.querySelectorAll('input');
     expect(inputs[0].value).toContain('Test user');
     expect(inputs[1].value).toContain('test@example.com');
@@ -74,5 +61,4 @@ describe('Component: Account', () => {
     expect(button).toBeTruthy();
     expect(button?.disabled).toBeFalsy();
   });
-
 });

@@ -1,21 +1,15 @@
-import { Component, Input } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+import { ToastService } from './toast.service';
 
 @Component({
   selector: 'app-toast',
   templateUrl: './toast.component.html',
   styleUrls: ['./toast.component.scss'],
-  standalone: false
+  imports: [CommonModule],
 })
 export class ToastComponent {
-  @Input() message = { body: '', type: '' };
-  existingTimeout = 0;
-
-  setMessage(body: string, type: string, time = 3000): void {
-    if (this.existingTimeout) {
-      clearTimeout(this.existingTimeout);
-    }
-    this.message.body = body;
-    this.message.type = type;
-    this.existingTimeout = window.setTimeout(() => this.message.body = '', time);
-  }
+  private toastService = inject(ToastService);
+  message = () => this.toastService.message();
 }
