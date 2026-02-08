@@ -21,7 +21,7 @@ setRoutes(app);
 const main = async (): Promise<void> => {
   try {
     await connectToMongo();
-    app.get('/*', (req, res) => {
+    app.get('/*splat', (req, res) => {
       res.sendFile(pathJoin(__dirname, `../${feDir}/index.html`));
     });
     app.listen(app.get('port'), () => console.log(`Angular Full Stack listening on port ${app.get('port')}`));
