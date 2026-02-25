@@ -77,3 +77,9 @@ To get more help on the `angular-cli` use `ng --help` or go check out the [Angul
 
 ### Author
 * [Davide Violante](https://github.com/DavideViolante)
+
+### Contributors
+<a href="https://github.com/davideviolante/angular-full-stack/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=davideviolante/angular-full-stack" />
+</a>
+
