@@ -10,7 +10,7 @@
   },
   "scripts": {
   "ng": "ng",
-  "build:client": "ng build --configuration prod",
+  "build:client": "ng build --configuration production",
   "build:server": "tsc -p server",
   "build": "npm run build:client && npm run build:server",
   "start": "node dist/server/app.js",
