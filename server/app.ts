@@ -8,7 +8,7 @@ import setRoutes from './routes';
 
 const feDir = 'public/browser';
 const app = express();
-app.set('port', (process.env.PORT || 3000));
+const port = process.env.PORT;
 app.use('/', express.static(pathJoin(__dirname, `../${feDir}`)));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -24,7 +24,9 @@ const main = async (): Promise<void> => {
     app.get('/*splat', (req, res) => {
       res.sendFile(pathJoin(__dirname, `../${feDir}/index.html`));
     });
-    app.listen(app.get('port'), () => console.log(`Angular Full Stack listening on port ${app.get('port')}`));
+    app.listen(port, () => {
+      console.log(`Server running on ${port}`);
+    });
   } catch (error) {
     console.error(error);
   }
