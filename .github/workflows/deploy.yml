@@ -10,13 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ----------------------------
+      # Checkout code
+      # ----------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
       # ----------------------------
       # AWS credentials
       # ----------------------------
-      - name: Configure AWS
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -31,7 +34,7 @@ jobs:
 
       - name: Terraform Init
         working-directory: terraform
-        run: terraform init -input=false
+        run: terraform init -input=false -reconfigure
 
       - name: Terraform Apply
         working-directory: terraform
@@ -41,7 +44,7 @@ jobs:
         run: terraform apply -auto-approve -input=false
 
       # ----------------------------
-      # Outputs
+      # Get Terraform outputs
       # ----------------------------
       - name: Get Terraform outputs
         id: tf
@@ -52,7 +55,7 @@ jobs:
           echo "env=$(terraform output -raw env_name)" >> $GITHUB_OUTPUT
 
       # ----------------------------
-      # Node setup
+      # Setup Node
       # ----------------------------
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -62,11 +65,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ----------------------------
+      # Build app
+      # ----------------------------
       - name: Build project
         run: npm run build
 
       # ----------------------------
-      # Package app
+      # Create deployment package
       # ----------------------------
       - name: Create deployment zip
         run: |
@@ -78,15 +84,15 @@ jobs:
           zip -r ../app.zip .
 
       # ----------------------------
-      # Upload to S3
+      # Upload to S3 (IMPORTANT FIX)
       # ----------------------------
-      - name: Upload to S3
+      - name: Upload artifact to S3
         run: aws s3 cp app.zip s3://${{ steps.tf.outputs.bucket }}/app.zip
 
       # ----------------------------
-      # Create EB version
+      # Create EB application version
       # ----------------------------
-      - name: Create EB version
+      - name: Create EB application version
         run: |
           aws elasticbeanstalk create-application-version \
             --application-name ${{ steps.tf.outputs.app }} \
@@ -94,9 +100,9 @@ jobs:
             --source-bundle S3Bucket=${{ steps.tf.outputs.bucket }},S3Key=app.zip
 
       # ----------------------------
-      # Deploy EB
+      # Deploy to EB
       # ----------------------------
-      - name: Deploy EB
+      - name: Deploy to Elastic Beanstalk
         run: |
           aws elasticbeanstalk update-environment \
             --environment-name ${{ steps.tf.outputs.env }} \

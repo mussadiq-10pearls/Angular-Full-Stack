@@ -3,14 +3,14 @@ provider "aws" {
 }
 
 #####################################
-# Random suffix for unique naming
+# Random suffix
 #####################################
 resource "random_id" "suffix" {
   byte_length = 4
 }
 
 #####################################
-# S3 Bucket (for deployment artifacts)
+# S3 Bucket (for artifacts)
 #####################################
 resource "aws_s3_bucket" "eb_bucket" {
   bucket        = "angular-full-stack-${random_id.suffix.hex}"
@@ -18,7 +18,7 @@ resource "aws_s3_bucket" "eb_bucket" {
 }
 
 #####################################
-# IAM Role (EC2)
+# IAM Role (EC2 for EB)
 #####################################
 resource "aws_iam_role" "ec2_role" {
   name = "eb-ec2-role-${random_id.suffix.hex}"
@@ -53,18 +53,7 @@ resource "aws_elastic_beanstalk_application" "app" {
 }
 
 #####################################
-# Application Version
-#####################################
-resource "aws_elastic_beanstalk_application_version" "app_version" {
-  name        = "v-${random_id.suffix.hex}"
-  application = aws_elastic_beanstalk_application.app.name
-
-  bucket = aws_s3_bucket.eb_bucket.bucket
-  key    = "app.zip"
-}
-
-#####################################
-# VPC (default)
+# VPC + Subnets (TOP LEVEL - FIXED)
 #####################################
 data "aws_vpc" "default" {
   default = true
@@ -94,11 +83,9 @@ resource "aws_elastic_beanstalk_environment" "env" {
   application         = aws_elastic_beanstalk_application.app.name
   solution_stack_name = "64bit Amazon Linux 2023 v6.10.1 running Node.js 20"
 
-  version_label = aws_elastic_beanstalk_application_version.app_version.name
-
-  #################################
-  # App Environment Variables
-  #################################
+  #####################################
+  # ENV VARIABLES
+  #####################################
   setting {
     namespace = "aws:elasticbeanstalk:application:environment"
     name      = "MONGODB_URI"
@@ -123,9 +110,9 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = "8080"
   }
 
-  #################################
-  # Instance Config
-  #################################
+  #####################################
+  # INSTANCE CONFIG
+  #####################################
   setting {
     namespace = "aws:autoscaling:launchconfiguration"
     name      = "InstanceType"
@@ -138,9 +125,9 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = aws_iam_instance_profile.ec2_profile.name
   }
 
-  #################################
-  # Scaling
-  #################################
+  #####################################
+  # SCALING
+  #####################################
   setting {
     namespace = "aws:autoscaling:asg"
     name      = "MinSize"
@@ -153,9 +140,9 @@ resource "aws_elastic_beanstalk_environment" "env" {
     value     = "1"
   }
 
-  #################################
-  # VPC
-  #################################
+  #####################################
+  # VPC CONFIG
+  #####################################
   setting {
     namespace = "aws:ec2:vpc"
     name      = "VPCId"
@@ -180,8 +167,9 @@ resource "aws_elastic_beanstalk_environment" "env" {
 }
 
 #####################################
-# Output
+# OUTPUTS (for CI/CD)
 #####################################
+
 output "url" {
   value = aws_elastic_beanstalk_environment.env.endpoint_url
 }
