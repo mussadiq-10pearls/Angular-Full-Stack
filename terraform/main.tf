@@ -3,61 +3,18 @@ provider "aws" {
 }
 
 #####################################
-# Random suffix for unique S3 bucket
+# Random suffix for unique naming
 #####################################
 resource "random_id" "suffix" {
   byte_length = 4
 }
 
 #####################################
-# S3 Bucket
+# S3 Bucket (for deployment artifacts)
 #####################################
 resource "aws_s3_bucket" "eb_bucket" {
   bucket        = "angular-full-stack-${random_id.suffix.hex}"
   force_destroy = true
-}
-
-#####################################
-# Archive (ZIP your app)
-#####################################
-data "archive_file" "app_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/.."
-  output_path = "${path.module}/app.zip"
-
-  excludes = [
-  ".git",
-  ".github",
-  ".husky",
-  ".angular",
-  "node_modules",
-  "terraform",
-  "deploy",
-  "*.zip",
-  ".env",
-  "demo.gif",
-  "README.md",
-  "LICENSE",
-  "docker-compose.yml",
-  "Dockerfile",
-  "jest.config.js",
-  "eslint.config.js",
-  "angular.json",
-  "tsconfig*.json",
-  "proxy.conf.json",
-  "app.zip"
-]
-}
-
-#####################################
-# Upload ZIP to S3
-#####################################
-resource "aws_s3_object" "app_zip" {
-  bucket = aws_s3_bucket.eb_bucket.bucket
-  key    = "app.zip"
-  source = data.archive_file.app_zip.output_path
-
-  etag = filemd5(data.archive_file.app_zip.output_path)
 }
 
 #####################################
@@ -99,24 +56,20 @@ resource "aws_elastic_beanstalk_application" "app" {
 # Application Version
 #####################################
 resource "aws_elastic_beanstalk_application_version" "app_version" {
-  name        = "v1"
+  name        = "v-${random_id.suffix.hex}"
   application = aws_elastic_beanstalk_application.app.name
-  bucket      = aws_s3_bucket.eb_bucket.bucket
-  key         = aws_s3_object.app_zip.key
 
-  depends_on = [aws_s3_object.app_zip]
+  bucket = aws_s3_bucket.eb_bucket.bucket
+  key    = "app.zip"
 }
 
 #####################################
-# Get Default VPC
+# VPC (default)
 #####################################
 data "aws_vpc" "default" {
   default = true
 }
 
-#####################################
-# Get Subnets
-#####################################
 data "aws_subnets" "public" {
   filter {
     name   = "vpc-id"
@@ -143,17 +96,32 @@ resource "aws_elastic_beanstalk_environment" "env" {
 
   version_label = aws_elastic_beanstalk_application_version.app_version.name
 
+  #################################
+  # App Environment Variables
+  #################################
   setting {
-  namespace = "aws:elasticbeanstalk:application:environment"
-  name      = "MONGODB_URI"
-  value     = var.mongodb_uri
-}
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "MONGODB_URI"
+    value     = var.mongodb_uri
+  }
 
-setting {
-  namespace = "aws:elasticbeanstalk:application:environment"
-  name      = "SECRET_TOKEN"
-  value     = var.secret_token
-}
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "SECRET_TOKEN"
+    value     = var.secret_token
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "NODE_ENV"
+    value     = "production"
+  }
+
+  setting {
+    namespace = "aws:elasticbeanstalk:application:environment"
+    name      = "PORT"
+    value     = "8080"
+  }
 
   #################################
   # Instance Config
@@ -186,7 +154,7 @@ setting {
   }
 
   #################################
-  # VPC FIX (CRITICAL)
+  # VPC
   #################################
   setting {
     namespace = "aws:ec2:vpc"
@@ -194,31 +162,16 @@ setting {
     value     = data.aws_vpc.default.id
   }
 
- setting {
-  namespace = "aws:ec2:vpc"
-  name      = "Subnets"
-  value     = join(",", local.selected_subnets)
-}
+  setting {
+    namespace = "aws:ec2:vpc"
+    name      = "Subnets"
+    value     = join(",", local.selected_subnets)
+  }
 
   setting {
     namespace = "aws:ec2:vpc"
     name      = "AssociatePublicIpAddress"
     value     = "true"
-  }
-
-  #################################
-  # App Environment Variables
-  #################################
-  setting {
-    namespace = "aws:elasticbeanstalk:application:environment"
-    name      = "NODE_ENV"
-    value     = "production"
-  }
-
-  setting {
-    namespace = "aws:elasticbeanstalk:application:environment"
-    name      = "PORT"
-    value     = "8080"
   }
 
   depends_on = [
