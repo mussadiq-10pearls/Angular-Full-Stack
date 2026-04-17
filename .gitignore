@@ -43,5 +43,21 @@ __screenshots__/
 .DS_Store
 Thumbs.db
 
+# environment
+.env
+
 # MongoDB
 /data
+
+# terraForm
+terraform/terraform.tfvars
+.terraForm
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+
+# Terraform lock file (KEEP THIS!)
+!terraform.lock.hcl
+
+app.zip

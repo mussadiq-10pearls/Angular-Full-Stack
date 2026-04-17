@@ -1,0 +1,2 @@
+mongodb_uri  = "mongodb+srv://servername"
+secret_token = "secret-token"

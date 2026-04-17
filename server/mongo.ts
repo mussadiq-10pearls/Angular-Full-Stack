@@ -1,5 +1,9 @@
 import { connect, connection } from 'mongoose';
 
+import dns from "dns";
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 const connectToMongo = async (): Promise<void> => {
   let mongodbURI: string;
   if (process.env.NODE_ENV === 'test') {
@@ -7,8 +11,12 @@ const connectToMongo = async (): Promise<void> => {
   } else {
     mongodbURI = process.env.MONGODB_URI as string;
   }
-  await connect(mongodbURI);
-  console.log(`Connected to MongoDB (db: ${mongodbURI.split('/').pop()})`);
+  try {
+    await connect(mongodbURI);
+    console.log(`Connected to MongoDB (db: ${mongodbURI.split('/').pop()})`);
+  } catch (ex) {
+    console.log("unable to connect: " + ex);
+  }
 };
 
 const disconnectMongo = async (): Promise<void> => {
