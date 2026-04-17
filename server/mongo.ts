@@ -7,7 +7,7 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 const connectToMongo = async (): Promise<void> => {
   let mongodbURI: string;
   if (process.env.NODE_ENV === 'test') {
-    mongodbURI = process.env.MONGODB_TEST_URI as string;
+    mongodbURI = process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/test' as string;
   } else {
     mongodbURI = process.env.MONGODB_URI as string;
   }
@@ -15,7 +15,8 @@ const connectToMongo = async (): Promise<void> => {
     await connect(mongodbURI);
     console.log(`Connected to MongoDB (db: ${mongodbURI.split('/').pop()})`);
   } catch (ex) {
-    console.log("unable to connect: " + ex);
+    console.error("unable to connect:", ex);
+    throw ex;
   }
 };
 
