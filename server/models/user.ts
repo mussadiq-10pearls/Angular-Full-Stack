@@ -43,7 +43,8 @@ userSchema.methods.comparePassword = function(candidatePassword: string, callbac
 
 // Omit the password when returning a user
 userSchema.set('toJSON', {
-  transform: (doc, ret) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  transform: (doc, ret: any) => {
     delete ret.password;
     return ret;
   }

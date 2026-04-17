@@ -102,7 +102,8 @@
     "packageManager": "npm",
     "schematicCollections": [
       "angular-eslint"
-    ]
+    ],
+    "analytics": "c4db194f-f370-482e-a169-a06a7a54f9b1"
   },
   "schematics": {
     "@schematics/angular:component": {
