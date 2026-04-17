@@ -1,0 +1,103 @@
+name: Terraform + Deploy to EB
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----------------------------
+      # AWS credentials
+      # ----------------------------
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # ----------------------------
+      # Terraform setup
+      # ----------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false
+
+      - name: Terraform Apply
+        working-directory: terraform
+        env:
+          TF_VAR_mongodb_uri: ${{ secrets.MONGODB_URI }}
+          TF_VAR_secret_token: ${{ secrets.SECRET_TOKEN }}
+        run: terraform apply -auto-approve -input=false
+
+      # ----------------------------
+      # Outputs
+      # ----------------------------
+      - name: Get Terraform outputs
+        id: tf
+        working-directory: terraform
+        run: |
+          echo "bucket=$(terraform output -raw bucket_name)" >> $GITHUB_OUTPUT
+          echo "app=$(terraform output -raw app_name)" >> $GITHUB_OUTPUT
+          echo "env=$(terraform output -raw env_name)" >> $GITHUB_OUTPUT
+
+      # ----------------------------
+      # Node setup
+      # ----------------------------
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      # ----------------------------
+      # Package app
+      # ----------------------------
+      - name: Create deployment zip
+        run: |
+          mkdir deploy
+          cp -r dist/* deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          cd deploy
+          zip -r ../app.zip .
+
+      # ----------------------------
+      # Upload to S3
+      # ----------------------------
+      - name: Upload to S3
+        run: aws s3 cp app.zip s3://${{ steps.tf.outputs.bucket }}/app.zip
+
+      # ----------------------------
+      # Create EB version
+      # ----------------------------
+      - name: Create EB version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name ${{ steps.tf.outputs.app }} \
+            --version-label $GITHUB_SHA \
+            --source-bundle S3Bucket=${{ steps.tf.outputs.bucket }},S3Key=app.zip
+
+      # ----------------------------
+      # Deploy EB
+      # ----------------------------
+      - name: Deploy EB
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name ${{ steps.tf.outputs.env }} \
+            --version-label $GITHUB_SHA

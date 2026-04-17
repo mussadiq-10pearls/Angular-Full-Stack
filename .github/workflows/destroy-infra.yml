@@ -1,0 +1,63 @@
+name: Terraform Destroy (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type 'destroy' to confirm deletion"
+        required: true
+        default: ""
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ----------------------------
+      # Safety check
+      # ----------------------------
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "❌ Destroy not confirmed. Type 'destroy' to proceed."
+            exit 1
+          fi
+
+      # ----------------------------
+      # Checkout code
+      # ----------------------------
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ----------------------------
+      # AWS credentials
+      # ----------------------------
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      # ----------------------------
+      # Terraform setup
+      # ----------------------------
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      # ----------------------------
+      # Init (connect to S3 state)
+      # ----------------------------
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init -input=false -reconfigure
+
+      # ----------------------------
+      # Destroy infrastructure
+      # ----------------------------
+      - name: Terraform Destroy
+        working-directory: terraform
+        env:
+          TF_VAR_mongodb_uri: ${{ secrets.MONGODB_URI }}
+          TF_VAR_secret_token: ${{ secrets.SECRET_TOKEN }}
+        run: terraform destroy -auto-approve -input=false
